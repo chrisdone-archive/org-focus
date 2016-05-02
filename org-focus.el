@@ -157,7 +157,8 @@
                                         'org-agenda-date-today
                                       'org-agenda-date)))
     (let ((total-planned 0)
-          (total-done 0))
+          (total-done 0)
+          (todo-count 0))
       (cl-loop for item in items
                do (when (or (cl-remove-if-not
                              (lambda (entry)
@@ -188,17 +189,28 @@
                                                        0)))
                                                  clocks))))
                       (setq total-done (+ total-done hours))
+                      (let ((status (plist-get item :status)))
+                        (setq todo-count
+                              (+ todo-count
+                                 (cond ((null status)
+                                        0)
+                                       ((not (member status org-done-keywords-for-agenda))
+                                        1)
+                                       (t 0)))))
                       (org-focus-render-item
                        base-day i
                        this-time item hours
                        this-is-current))))
-      (org-focus-render-day-totals base-day i total-done total-planned))))
+      (org-focus-render-day-totals base-day i total-done total-planned todo-count))))
 
-(defun org-focus-render-day-totals (base-day i done planned)
+(defun org-focus-render-day-totals (base-day i done planned todos)
   "Render the totals for a day."
+  (message "%S" todos)
   (unless (and (= done 0) (= planned 0))
-    (let ((remaining (if (= base-day i)
-                         (format "(%.2f left)"
+    (let ((remaining (if (and (= base-day i) )
+                         (format (if (> todos 0)
+                                     "(%.2f left)"
+                                   "")
                                  (if (> planned done)
                                      (- planned done)
                                    0))
