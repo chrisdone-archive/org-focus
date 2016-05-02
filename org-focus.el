@@ -43,7 +43,9 @@
 
 ;;; Code:
 
+(require 'cl)
 (require 'org)
+(require 'org-clock)
 
 (font-lock-add-keywords
  'org-mode
@@ -154,33 +156,33 @@
                                       'org-agenda-date)))
     (let ((total-planned 0)
           (total-done 0))
-      (loop for item in items
-            do (when (or (remove-if-not
-                          (lambda (entry)
-                            (let ((date (plist-get entry :date))
-                                  (hours (plist-get entry :hours)))
-                              (when (org-focus-day= date this-time)
-                                (setq total-planned
-                                      (+ total-planned
-                                         (or hours 0)))
-                                t)))
-                          (plist-get item :schedule))
-                         (remove-if-not
-                          (lambda (entry)
-                            (let ((date (plist-get entry :date)))
-                              (org-focus-day= date this-time)))
-                          (plist-get item :clocks)))
-                 (let* ((clocks (plist-get item :clocks))
-                        (hours (apply '+
-                                      (mapcar (lambda (clock)
-                                                (let ((date (plist-get clock :date))
-                                                      (hours (plist-get clock :hours)))
-                                                  (if (org-focus-day= this-time date)
-                                                      hours
-                                                    0)))
-                                              clocks))))
-                   (setq total-done (+ total-done hours))
-                   (org-focus-render-item this-time item))))
+      (cl-loop for item in items
+               do (when (or (cl-remove-if-not
+                             (lambda (entry)
+                               (let ((date (plist-get entry :date))
+                                     (hours (plist-get entry :hours)))
+                                 (when (org-focus-day= date this-time)
+                                   (setq total-planned
+                                         (+ total-planned
+                                            (or hours 0)))
+                                   t)))
+                             (plist-get item :schedule))
+                            (cl-remove-if-not
+                             (lambda (entry)
+                               (let ((date (plist-get entry :date)))
+                                 (org-focus-day= date this-time)))
+                             (plist-get item :clocks)))
+                    (let* ((clocks (plist-get item :clocks))
+                           (hours (apply '+
+                                         (mapcar (lambda (clock)
+                                                   (let ((date (plist-get clock :date))
+                                                         (hours (plist-get clock :hours)))
+                                                     (if (org-focus-day= this-time date)
+                                                         hours
+                                                       0)))
+                                                 clocks))))
+                      (setq total-done (+ total-done hours))
+                      (org-focus-render-item this-time item hours))))
       (org-focus-render-day-totals base-day i total-done total-planned))))
 
 (defun org-focus-render-day-totals (base-day i done planned)
@@ -192,10 +194,10 @@
                                 planned)
                         'face 'org-agenda-structure))))
 
-(defun org-focus-render-item (this-time item)
+(defun org-focus-render-item (this-time item hours)
   "Render an item for a day of the week."
   (let* ((title (plist-get item :title))
-         (scheduled-day (remove-if-not
+         (scheduled-day (cl-remove-if-not
                          (lambda (entry)
                            (let ((date (plist-get entry :date)))
                              (org-focus-day= date this-time)))
