@@ -236,12 +236,16 @@
                                   hours
                                   planned)
                           'face face)
-              (propertize status
+              (propertize (if status
+                              (concat status " ")
+                            "GENERAL ")
                           'face
                           (if (member status org-done-keywords-for-agenda)
                               'org-done
-                            'org-todo))
-              (propertize (concat " " title "\n") 'face face))
+                            (if status
+                                'org-todo
+                              'org-agenda-structure)))
+              (propertize (concat title "\n") 'face face))
       (when current
         (let ((o (make-overlay start (point))))
           (overlay-put o 'face 'org-agenda-clocking))))))
