@@ -133,6 +133,7 @@
             (base-time (or base-time (current-time)))
             (base-day (string-to-number (format-time-string "%u" base-time))))
         (erase-buffer)
+        (remove-overlays)
         (insert
          (propertize
           (format-time-string "Clock-week-agenda (W%W):\n" base-time)
@@ -223,7 +224,8 @@
                             (format "%5.2f" hours)
                           "??.??"))
                     "??.??")))
-    (let ((face (cond
+    (let ((start (point))
+          (face (cond
                  ((member status org-done-keywords-for-agenda)
                   'org-agenda-done)
                  ((= base-day i)
@@ -239,7 +241,10 @@
                           (if (member status org-done-keywords-for-agenda)
                               'org-done
                             'org-todo))
-              (propertize (concat " " title "\n") 'face face)))))
+              (propertize (concat " " title "\n") 'face face))
+      (when current
+        (let ((o (make-overlay start (point))))
+          (overlay-put o 'face 'org-agenda-clocking))))))
 
 (defun org-focus-schedule ()
   "Schedule an item with a planned hours. This always adds a new scheduled date."
