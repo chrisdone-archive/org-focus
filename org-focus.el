@@ -182,14 +182,16 @@
                                                          (hours (plist-get clock :hours))
                                                          (current (plist-get clock :current)))
                                                      (if (org-focus-day= this-time date)
-                                                         (progn (setq this-is-current current)
+                                                         (progn (when current
+                                                                  (setq this-is-current t))
                                                                 hours)
                                                        0)))
                                                  clocks))))
                       (setq total-done (+ total-done hours))
                       (org-focus-render-item
                        base-day i
-                       this-time item hours this-is-current))))
+                       this-time item hours
+                       this-is-current))))
       (org-focus-render-day-totals base-day i total-done total-planned))))
 
 (defun org-focus-render-day-totals (base-day i done planned)
