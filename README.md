@@ -23,7 +23,7 @@ It adds an extra field to the SCHEDULED property in org-mode:
 
 ```
 * TODO Meeting with Mary
-  SCHEDULED: <2016-05-01 Sun> <1 hour>
+  SCHEDULED: <2016-05-01 Sun> <1 hr>
 ```
 
 You schedule an item in for a day and then set a plan of how long
@@ -34,9 +34,9 @@ which pertains the the task overall.
 
 ```
 * TODO Meeting with Mary
-  ESTIMATE: <2 hours>
-  SCHEDULED: <2016-05-01 Sun> <1 hour>
-  SCHEDULED: <2016-05-02 Mon> <1 hour>
+  ESTIMATE: <2 hr>
+  SCHEDULED: <2016-05-01 Sun> <1 hr>
+  SCHEDULED: <2016-05-02 Mon> <1 hr>
 ```
 
 This allows us to have a task that spans many days, with an overall
