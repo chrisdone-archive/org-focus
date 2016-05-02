@@ -44,6 +44,7 @@
 ;;; Code:
 
 (require 'cl)
+(require 'font-lock)
 (require 'org)
 (require 'org-clock)
 
@@ -218,7 +219,7 @@
                                 planned
                                 title)
                         'face (if current
-                                  'bold-italic
+                                  'font-lock-warning-face
                                 nil)))
     (insert "\n")))
 
