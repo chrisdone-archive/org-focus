@@ -173,16 +173,19 @@
                                  (org-focus-day= date this-time)))
                              (plist-get item :clocks)))
                     (let* ((clocks (plist-get item :clocks))
+                           (this-is-current nil)
                            (hours (apply '+
                                          (mapcar (lambda (clock)
                                                    (let ((date (plist-get clock :date))
-                                                         (hours (plist-get clock :hours)))
+                                                         (hours (plist-get clock :hours))
+                                                         (current (plist-get clock :current)))
                                                      (if (org-focus-day= this-time date)
-                                                         hours
+                                                         (progn (setq this-is-current current)
+                                                                hours)
                                                        0)))
                                                  clocks))))
                       (setq total-done (+ total-done hours))
-                      (org-focus-render-item this-time item hours))))
+                      (org-focus-render-item this-time item hours this-is-current))))
       (org-focus-render-day-totals base-day i total-done total-planned))))
 
 (defun org-focus-render-day-totals (base-day i done planned)
@@ -194,7 +197,7 @@
                                 planned)
                         'face 'org-agenda-structure))))
 
-(defun org-focus-render-item (this-time item hours)
+(defun org-focus-render-item (this-time item hours current)
   "Render an item for a day of the week."
   (let* ((title (plist-get item :title))
          (scheduled-day (cl-remove-if-not
@@ -214,7 +217,9 @@
                                 hours
                                 planned
                                 title)
-                        'face 'org-agenda-done))
+                        'face (if current
+                                  'bold-italic
+                                'org-todo-face)))
     (insert "\n")))
 
 (defun org-focus-schedule ()
@@ -325,6 +330,7 @@
      collect (let ((year (string-to-number (match-string 1)))
                    (month (string-to-number (match-string 2)))
                    (day (string-to-number (match-string 3)))
+                   (current (not (match-string 4)))
                    (hours (let ((string (match-string 4)))
                             (if string
                                 (org-focus-parse-hours string)
@@ -332,7 +338,8 @@
                (list :date (apply 'encode-time
                                   (org-parse-time-string
                                    (format "%0.4d-%0.2d-%0.2d" year month day)))
-                     :hours hours)))))
+                     :hours hours
+                     :current current)))))
 
 (defun org-focus-current-clock ()
   "Get the clocked time for the current item, does not include
