@@ -192,11 +192,18 @@
 (defun org-focus-render-day-totals (base-day i done planned)
   "Render the totals for a day."
   (unless (and (= done 0) (= planned 0))
-    (insert (propertize (format "  %-10.10s  %5.2f / %5.2f\n"
-                                "Total"
-                                done
-                                planned)
-                        'face 'org-agenda-structure))))
+    (let ((remaining (if (= base-day i)
+                         (format "(%.2f left)"
+                                 (if (> planned done)
+                                     (- planned done)
+                                   0))
+                       "")))
+      (insert (propertize (format "  %-10.10s  %5.2f / %5.2f %s\n"
+                                  "Total"
+                                  done
+                                  planned
+                                  remaining)
+                          'face 'org-agenda-structure)))))
 
 (defun org-focus-render-item (this-time item hours current)
   "Render an item for a day of the week."
@@ -213,15 +220,14 @@
                             (format "%5.2f" hours)
                           "??.??"))
                     "??.??")))
-    (insert (propertize (format "  %-10.10s  %5.2f / %s  %s"
+    (insert (propertize (format "  %-10.10s  %5.2f / %s  %s\n"
                                 category
                                 hours
                                 planned
                                 title)
                         'face (if current
                                   'font-lock-warning-face
-                                nil)))
-    (insert "\n")))
+                                nil)))))
 
 (defun org-focus-schedule ()
   "Schedule an item with a planned hours. This always adds a new scheduled date."
