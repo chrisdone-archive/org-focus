@@ -43,7 +43,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'font-lock)
 (require 'org)
 (require 'org-clock)
