@@ -186,7 +186,9 @@
                                                        0)))
                                                  clocks))))
                       (setq total-done (+ total-done hours))
-                      (org-focus-render-item this-time item hours this-is-current))))
+                      (org-focus-render-item
+                       base-day i
+                       this-time item hours this-is-current))))
       (org-focus-render-day-totals base-day i total-done total-planned))))
 
 (defun org-focus-render-day-totals (base-day i done planned)
@@ -205,7 +207,7 @@
                                   remaining)
                           'face 'org-agenda-structure)))))
 
-(defun org-focus-render-item (this-time item hours current)
+(defun org-focus-render-item (base-day i this-time item hours current)
   "Render an item for a day of the week."
   (let* ((title (plist-get item :title))
          (scheduled-day (cl-remove-if-not
@@ -213,6 +215,7 @@
                            (let ((date (plist-get entry :date)))
                              (org-focus-day= date this-time)))
                          (plist-get item :schedule)))
+         (status (plist-get item :status))
          (category (plist-get item :category))
          (planned (if scheduled-day
                       (let ((hours (plist-get (car scheduled-day) :hours)))
@@ -220,14 +223,23 @@
                             (format "%5.2f" hours)
                           "??.??"))
                     "??.??")))
-    (insert (propertize (format "  %-10.10s  %5.2f / %s  %s\n"
-                                category
-                                hours
-                                planned
-                                title)
-                        'face (if current
-                                  'org-agenda-clocking
-                                nil)))))
+    (let ((face (cond
+                 ((member status org-done-keywords-for-agenda)
+                  'org-agenda-done)
+                 ((= base-day i)
+                  'org-scheduled-today)
+                 (t 'org-scheduled))))
+      (insert (propertize (format "  %-10.10s  %5.2f / %s  "
+                                  category
+                                  hours
+                                  planned)
+                          'face face)
+              (propertize status
+                          'face
+                          (if (member status org-done-keywords-for-agenda)
+                              'org-done
+                            'org-todo))
+              (propertize (concat " " title "\n") 'face face)))))
 
 (defun org-focus-schedule ()
   "Schedule an item with a planned hours. This always adds a new scheduled date."
