@@ -37,6 +37,9 @@
 ;; estimate. Then each day that you're working on the task, you can
 ;; put in an amount of time you plan to spend on it (either hopeful or
 ;; a pestimate, as you prefer).
+;;
+;; (define-key org-mode-map (kbd "C-c C-e") 'org-focus-estimate)
+;; (define-key org-mode-map (kbd "C-c C-s") 'org-focus-schedule)
 
 ;;; Code:
 
