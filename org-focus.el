@@ -219,7 +219,7 @@
                                 title)
                         'face (if current
                                   'bold-italic
-                                'org-todo-face)))
+                                nil)))
     (insert "\n")))
 
 (defun org-focus-schedule ()
