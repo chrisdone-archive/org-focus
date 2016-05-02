@@ -226,7 +226,7 @@
                                 planned
                                 title)
                         'face (if current
-                                  'font-lock-warning-face
+                                  'org-agenda-clocking
                                 nil)))))
 
 (defun org-focus-schedule ()
