@@ -158,7 +158,8 @@
                                       'org-agenda-date)))
     (let ((total-planned 0)
           (total-done 0)
-          (todo-count 0))
+          (todo-count 0)
+          (total-unplanned 0))
       (cl-loop for item in items
                do (when (or (cl-remove-if-not
                              (lambda (entry)
@@ -187,7 +188,21 @@
                                                                   (setq this-is-current t))
                                                                 hours)
                                                        0)))
-                                                 clocks))))
+                                                 clocks)))
+                           (planned-hours
+                            (or (plist-get (car (cl-remove-if-not
+                                                 (lambda (entry)
+                                                   (let ((date (plist-get entry :date)))
+                                                     (org-focus-day= date this-time)))
+                                                 (plist-get item :schedule)))
+                                           :hours)
+                                0)))
+                      (setq total-unplanned
+                            (+ total-unplanned
+                               (if (and (= 0 planned-hours)
+                                        (> hours 0))
+                                   hours
+                                 0)))
                       (setq total-done (+ total-done hours))
                       (let ((status (plist-get item :status)))
                         (setq todo-count
@@ -201,23 +216,29 @@
                        base-day i
                        this-time item hours
                        this-is-current))))
-      (org-focus-render-day-totals base-day i total-done total-planned todo-count))))
+      (org-focus-render-day-totals base-day i
+                                   total-done total-planned total-unplanned
+                                   todo-count))))
 
-(defun org-focus-render-day-totals (base-day i done planned todos)
+(defun org-focus-render-day-totals (base-day i done planned unplanned todos)
   "Render the totals for a day."
   (unless (and (= done 0) (= planned 0))
-    (let ((remaining (if (and (= base-day i) )
+    (let ((remaining (if (and (= base-day i))
                          (format (if (> todos 0)
-                                     "(%.2f left)"
+                                     "(%.2f planned, %.2f unplanned, %.2f left)"
                                    "")
+                                 planned
+                                 unplanned
                                  (if (> planned done)
-                                     (- planned done)
+                                     (- (+ planned unplanned) done)
                                    0))
-                       "")))
+                       (if (> unplanned 0)
+                           (format "(%.2f unplanned)" unplanned)
+                         ""))))
       (insert (propertize (format "  %-10.10s  %5.2f / %5.2f %s\n"
                                   "Total"
                                   done
-                                  planned
+                                  (+ planned unplanned)
                                   remaining)
                           'face 'org-agenda-structure)))))
 
@@ -231,24 +252,27 @@
                          (plist-get item :schedule)))
          (status (plist-get item :status))
          (category (plist-get item :category))
+         (face (cond
+                ((member status org-done-keywords-for-agenda)
+                 'org-agenda-done)
+                ((= base-day i)
+                 'org-scheduled-today)
+                (t 'org-scheduled)))
          (planned (if scheduled-day
-                      (let ((hours (plist-get (car scheduled-day) :hours)))
-                        (if hours
-                            (format "%5.2f" hours)
-                          "??.??"))
-                    "??.??")))
-    (let ((start (point))
-          (face (cond
-                 ((member status org-done-keywords-for-agenda)
-                  'org-agenda-done)
-                 ((= base-day i)
-                  'org-scheduled-today)
-                 (t 'org-scheduled))))
-      (insert (propertize (format "  %-10.10s  %5.2f / %s  "
+                      (let ((planned-hours (plist-get (car scheduled-day) :hours)))
+                        (if planned-hours
+                            (propertize (format "%5.2f" planned-hours) 'face face)
+                          (propertize (format "%5.2f" hours)
+                                      'face 'org-agenda-structure)))
+                    (propertize (format "%5.2f" hours)
+                                'face 'org-agenda-structure))))
+    (let ((start (point)))
+      (insert (propertize (format "  %-10.10s  %5.2f / "
                                   category
-                                  hours
-                                  planned)
+                                  hours)
                           'face face)
+              planned
+              "  "
               (propertize (if status
                               (concat status " ")
                             "GENERAL ")
