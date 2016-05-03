@@ -205,7 +205,6 @@
 
 (defun org-focus-render-day-totals (base-day i done planned todos)
   "Render the totals for a day."
-  (message "%S" todos)
   (unless (and (= done 0) (= planned 0))
     (let ((remaining (if (and (= base-day i) )
                          (format (if (> todos 0)
