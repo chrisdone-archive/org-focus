@@ -214,7 +214,7 @@
                                        (t 0)))))
                       (org-focus-render-item
                        base-day i
-                       this-time item hours
+                       this-time item planned-hours hours
                        this-is-current))))
       (org-focus-render-day-totals base-day i
                                    total-done total-planned total-unplanned
@@ -242,14 +242,9 @@
                                   remaining)
                           'face 'org-agenda-structure)))))
 
-(defun org-focus-render-item (base-day i this-time item hours current)
+(defun org-focus-render-item (base-day i this-time item planned-hours hours current)
   "Render an item for a day of the week."
   (let* ((title (plist-get item :title))
-         (scheduled-day (cl-remove-if-not
-                         (lambda (entry)
-                           (let ((date (plist-get entry :date)))
-                             (org-focus-day= date this-time)))
-                         (plist-get item :schedule)))
          (status (plist-get item :status))
          (category (plist-get item :category))
          (face (cond
@@ -258,14 +253,13 @@
                 ((= base-day i)
                  'org-scheduled-today)
                 (t 'org-scheduled)))
-         (planned (if scheduled-day
-                      (let ((planned-hours (plist-get (car scheduled-day) :hours)))
-                        (if planned-hours
-                            (propertize (format "%5.2f" planned-hours) 'face face)
-                          (propertize (format "%5.2f" hours)
-                                      'face 'org-agenda-structure)))
-                    (propertize (format "%5.2f" hours)
-                                'face 'org-agenda-structure))))
+         (planned (if ( = 0 planned-hours)
+                      (propertize (format "%5.2f" hours)
+                                  'face 'org-agenda-structure)
+                    (if planned-hours
+                        (propertize (format "%5.2f" planned-hours) 'face face)
+                      (propertize (format "%5.2f" hours)
+                                  'face 'org-agenda-structure)))))
     (let ((start (point)))
       (insert (propertize (format "  %-10.10s  %5.2f / "
                                   category
