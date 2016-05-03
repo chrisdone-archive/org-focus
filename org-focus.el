@@ -78,6 +78,15 @@
 (define-key org-focus-mode-map (kbd "f") 'org-focus-forward)
 (define-key org-focus-mode-map (kbd "b") 'org-focus-backward)
 (define-key org-focus-mode-map (kbd "g") 'org-focus-current)
+(define-key org-focus-mode-map (kbd "RET") 'org-focus-goto)
+
+(defun org-focus-goto ()
+  "Go to the item."
+  (interactive)
+  (let ((item (save-excursion (goto-char (line-beginning-position))
+                              (get-text-property (point) 'org-focus-item))))
+    (switch-to-buffer (plist-get item :buffer))
+    (goto-char (plist-get item :point))))
 
 (defun org-focus-mode-current-time ()
   "Get the current buffer time."
@@ -264,7 +273,8 @@
       (insert (propertize (format "  %-10.10s  %5.2f / "
                                   category
                                   hours)
-                          'face face)
+                          'face face
+                          'org-focus-item item)
               planned
               "  "
               (propertize (if status
@@ -334,7 +344,9 @@
     (goto-char (point-min))
     (cl-loop
      while (search-forward-regexp org-todo-line-regexp nil t 1)
-     collect (let* ((status (match-string 2))
+     collect (let* ((item-point (line-beginning-position))
+                    (item-buffer (current-buffer))
+                    (status (match-string 2))
                     (title (match-string 3))
                     (boundary (save-excursion
                                 (if (search-forward-regexp org-todo-line-regexp nil t 1)
@@ -352,7 +364,9 @@
                      :category category
                      :schedule scheduled-dates
                      :estimate estimate
-                     :clocks clocks)))))
+                     :clocks clocks
+                     :point item-point
+                     :buffer item-buffer)))))
 
 (defun org-focus-item-estimate (boundary)
   "Get the item estimate."
