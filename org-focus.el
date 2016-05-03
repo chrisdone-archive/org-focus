@@ -367,7 +367,7 @@
                                     (max 0 (1- (line-beginning-position)))
                                   (point-max))))
                     (category (when title
-                                (get-text-property 0 'org-category title)))
+                                (file-name-nondirectory (buffer-file-name))))
                     (scheduled-dates (org-focus-item-schedule boundary))
                     (estimate (org-focus-item-estimate boundary))
                     (clocks (org-focus-item-clocks boundary)))
