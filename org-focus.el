@@ -79,6 +79,8 @@
 (define-key org-focus-mode-map (kbd "b") 'org-focus-backward)
 (define-key org-focus-mode-map (kbd "g") 'org-focus-current)
 (define-key org-focus-mode-map (kbd "RET") 'org-focus-goto)
+(define-key org-focus-mode-map (kbd "C-c C-x C-i") 'org-focus-clock-in)
+(define-key org-focus-mode-map (kbd "C-c C-x C-o") 'org-focus-clock-out)
 
 (defun org-focus-goto ()
   "Go to the item."
@@ -87,6 +89,18 @@
                               (get-text-property (point) 'org-focus-item))))
     (switch-to-buffer (plist-get item :buffer))
     (goto-char (plist-get item :point))))
+
+(defun org-focus-clock-in ()
+  "Go to the item and clock in."
+  (interactive)
+  (org-focus-goto)
+  (org-clock-in))
+
+(defun org-focus-clock-out ()
+  "Go to the item and clock out."
+  (interactive)
+  (org-focus-goto)
+  (org-clock-out))
 
 (defun org-focus-mode-current-time ()
   "Get the current buffer time."
