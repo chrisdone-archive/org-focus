@@ -236,6 +236,7 @@
                               (when (and incomplete
                                          (= i base-day)
                                          (= hours 0)
+                                         (org-focus-day= this-time (current-time))
                                          (not (cl-remove-if-not
                                                (lambda (entry)
                                                  (let ((date (plist-get entry :date)))
