@@ -80,6 +80,8 @@
 (define-key org-focus-mode-map (kbd "g") 'org-focus-current)
 (define-key org-focus-mode-map (kbd "RET") 'org-focus-goto)
 (define-key org-focus-mode-map (kbd "C-c C-x C-i") 'org-focus-clock-in)
+(define-key org-focus-mode-map (kbd "C-c C-s") 'org-focus-jump-and-schedule)
+(define-key org-focus-mode-map (kbd "C-x C-s") 'org-save-all-org-buffers)
 (define-key org-focus-mode-map (kbd "C-c C-x C-o") 'org-focus-clock-out)
 
 (defun org-focus-goto ()
@@ -90,17 +92,30 @@
     (switch-to-buffer (plist-get item :buffer))
     (goto-char (plist-get item :point))))
 
+
+(defun org-focus-jump-and-schedule (&optional arg)
+  "Jump and schedule."
+  (interactive "P")
+  (save-window-excursion
+    (org-focus-goto)
+    (org-focus-schedule arg))
+  (org-focus-current))
+
 (defun org-focus-clock-in ()
   "Go to the item and clock in."
   (interactive)
-  (org-focus-goto)
-  (org-clock-in))
+  (save-window-excursion
+    (org-focus-goto)
+    (org-clock-in))
+  (org-focus-current))
 
 (defun org-focus-clock-out ()
   "Go to the item and clock out."
   (interactive)
-  (org-focus-goto)
-  (org-clock-out))
+  (save-window-excursion
+    (org-focus-goto)
+    (org-clock-out))
+  (org-focus-current))
 
 (defun org-focus-mode-current-time ()
   "Get the current buffer time."
@@ -291,36 +306,47 @@
                           'org-focus-item item)
               planned
               "  "
-              (propertize (if status
-                              (concat status " ")
-                            "GENERAL ")
+              (propertize (format "%-10.10s"
+                                  (if status
+                                      (concat status " ")
+                                    "GENERAL "))
                           'face
                           (if (member status org-done-keywords-for-agenda)
                               'org-done
                             (if status
                                 'org-todo
                               'org-agenda-structure)))
-              (propertize (concat title "\n") 'face face))
+              (propertize (format "%-40.40s" (org-focus-limit-string 40 title))
+                          'face face)
+              "\n")
       (when current
         (let ((o (make-overlay start (point))))
           (overlay-put o 'face 'org-agenda-clocking))))))
 
-(defun org-focus-schedule ()
+(defun org-focus-limit-string (n string)
+  "Limit STRING's length to N."
+  (if (> n (length string))
+      string
+    (concat (substring string 0 (1- n)) "…")))
+
+(defun org-focus-schedule (&optional arg)
   "Schedule an item with a planned hours. This always adds a new scheduled date."
-  (interactive)
+  (interactive "P")
   (save-excursion
     (org-back-to-heading t)
-    (when (search-forward-regexp org-todo-line-regexp nil t 1)
-      (let* ((depth (length (match-string 1))))
-        (forward-line 1)
-        (insert "\n")
-        (forward-line -1)
-        (insert (format "SCHEDULED: <%s>" (format-time-string "%Y-%m-%d %a" (current-time))))
-        (goto-char (line-beginning-position))
-        (indent-to (1+ depth))))
-    (call-interactively 'org-schedule)
-    (goto-char (line-end-position))
-    (insert (format " <%d hr>" (org-focus-read-estimate)))))
+    (unless arg
+      (when (search-forward-regexp org-todo-line-regexp nil t 1)
+        (let* ((depth (length (match-string 1))))
+          (forward-line 1)
+          (insert "\n")
+          (forward-line -1)
+          (insert (format "SCHEDULED: <%s>" (format-time-string "%Y-%m-%d %a" (current-time))))
+          (goto-char (line-beginning-position))
+          (indent-to (1+ depth)))))
+    (org-schedule nil)
+    (unless arg
+      (goto-char (line-end-position))
+      (insert (format " <%d hr>" (org-focus-read-estimate))))))
 
 (defun org-focus-estimate ()
   "Insert a totalling, over all time, estimate for the task."
