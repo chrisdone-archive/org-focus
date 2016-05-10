@@ -169,7 +169,8 @@
     (let ((inhibit-read-only t))
       (let ((items (org-focus-all-items))
             (base-time (or base-time (current-time)))
-            (base-day (string-to-number (format-time-string "%u" base-time))))
+            (base-day (string-to-number (format-time-string "%u" base-time)))
+            (unfinished-items (list)))
         (erase-buffer)
         (remove-overlays)
         (insert
@@ -180,9 +181,10 @@
                  do (org-focus-render-day base-day
                                           i
                                           (org-focus-add-day base-time i)
-                                          items))))))
+                                          items
+                                          unfinished-items))))))
 
-(defun org-focus-render-day (base-day i this-time items)
+(defun org-focus-render-day (base-day i this-time items unfinished-items)
   "Render a day of the week planner."
   (let ((title (concat
                 (format "%-11s" (format-time-string "%A" this-time))
@@ -199,61 +201,74 @@
           (todo-count 0)
           (total-unplanned 0))
       (cl-loop for item in items
-               do (when (or (cl-remove-if-not
-                             (lambda (entry)
-                               (let ((date (plist-get entry :date))
-                                     (hours (plist-get entry :hours)))
-                                 (when (org-focus-day= date this-time)
-                                   (setq total-planned
-                                         (+ total-planned
-                                            (or hours 0)))
-                                   t)))
-                             (plist-get item :schedule))
-                            (cl-remove-if-not
-                             (lambda (entry)
-                               (let ((date (plist-get entry :date)))
-                                 (org-focus-day= date this-time)))
-                             (plist-get item :clocks)))
-                    (let* ((clocks (plist-get item :clocks))
-                           (this-is-current nil)
-                           (hours (apply '+
-                                         (mapcar (lambda (clock)
-                                                   (let ((date (plist-get clock :date))
-                                                         (hours (plist-get clock :hours))
-                                                         (current (plist-get clock :current)))
-                                                     (if (org-focus-day= this-time date)
-                                                         (progn (when current
-                                                                  (setq this-is-current t))
-                                                                hours)
-                                                       0)))
-                                                 clocks)))
-                           (planned-hours
-                            (or (plist-get (car (cl-remove-if-not
-                                                 (lambda (entry)
-                                                   (let ((date (plist-get entry :date)))
-                                                     (org-focus-day= date this-time)))
-                                                 (plist-get item :schedule)))
-                                           :hours)
-                                0)))
-                      (setq total-unplanned
-                            (+ total-unplanned
-                               (if (and (= 0 planned-hours)
-                                        (> hours 0))
-                                   hours
-                                 0)))
-                      (setq total-done (+ total-done hours))
-                      (let ((status (plist-get item :status)))
+               do (let* ((status (plist-get item :status))
+                         (clocks (plist-get item :clocks))
+                         (this-is-current nil)
+                         (hours (apply '+
+                                       (mapcar (lambda (clock)
+                                                 (let ((date (plist-get clock :date))
+                                                       (hours (plist-get clock :hours))
+                                                       (current (plist-get clock :current)))
+                                                   (if (org-focus-day= this-time date)
+                                                       (progn (when current
+                                                                (setq this-is-current t))
+                                                              hours)
+                                                     0)))
+                                               clocks)))
+                         (incomplete (and (member status org-todo-keywords-for-agenda)
+                                          (not (member status org-done-keywords-for-agenda))))
+                         (holdover nil))
+                    (when (or (cl-remove-if-not
+                               (lambda (entry)
+                                 (let ((date (plist-get entry :date))
+                                       (hours (plist-get entry :hours)))
+                                   (when (org-focus-day= date this-time)
+                                     (setq total-planned
+                                           (+ total-planned
+                                              (or hours 0)))
+                                     t)))
+                               (plist-get item :schedule))
+                              (cl-remove-if-not
+                               (lambda (entry)
+                                 (let ((date (plist-get entry :date)))
+                                   (org-focus-day= date this-time)))
+                               (plist-get item :clocks))
+                              (when (and incomplete
+                                         (= i base-day)
+                                         (= hours 0)
+                                         (not (cl-remove-if-not
+                                               (lambda (entry)
+                                                 (let ((date (plist-get entry :date)))
+                                                   (org-focus-day< this-time date)))
+                                               (plist-get item :schedule))))
+                                (setq holdover t)))
+                      (let* ((planned-hours
+                              (or (plist-get (car (cl-remove-if-not
+                                                   (lambda (entry)
+                                                     (let ((date (plist-get entry :date)))
+                                                       (org-focus-day= date this-time)))
+                                                   (plist-get item :schedule)))
+                                             :hours)
+                                  0)))
+                        (setq total-unplanned
+                              (+ total-unplanned
+                                 (if (and (= 0 planned-hours)
+                                          (> hours 0))
+                                     hours
+                                   0)))
+                        (setq total-done (+ total-done hours))
                         (setq todo-count
                               (+ todo-count
                                  (cond ((null status)
                                         0)
                                        ((not (member status org-done-keywords-for-agenda))
                                         1)
-                                       (t 0)))))
-                      (org-focus-render-item
-                       base-day i
-                       this-time item planned-hours hours
-                       this-is-current))))
+                                       (t 0))))
+                        (org-focus-render-item
+                         base-day i
+                         this-time item planned-hours hours
+                         this-is-current
+                         holdover)))))
       (org-focus-render-day-totals base-day i
                                    total-done total-planned total-unplanned
                                    todo-count))))
@@ -280,7 +295,7 @@
                                   remaining)
                           'face 'org-agenda-structure)))))
 
-(defun org-focus-render-item (base-day i this-time item planned-hours hours current)
+(defun org-focus-render-item (base-day i this-time item planned-hours hours current holdover)
   "Render an item for a day of the week."
   (let* ((title (plist-get item :title))
          (status (plist-get item :status))
@@ -306,18 +321,30 @@
                           'org-focus-item item)
               planned
               "  "
-              (propertize (format "%-10.10s"
-                                  (if status
-                                      (concat status " ")
-                                    "GENERAL "))
-                          'face
-                          (if (member status org-done-keywords-for-agenda)
-                              'org-done
-                            (if status
-                                'org-todo
-                              'org-agenda-structure)))
+              (if (< i base-day)
+                  (format "%-10.10s"
+                          (if (> planned-hours 0)
+                              (propertize "SCHEDULED" 'face 'org-done)
+                            (propertize "UNPLANNED" 'face 'org-agenda-structure)))
+                (propertize (format "%-10.10s"
+                                    (if (< i base-day)
+                                        (if (member status org-done-keywords-for-agenda)
+                                            "DONE"
+                                          "WORKED ON")
+                                      (if status
+                                          (concat status " ")
+                                        "GENERAL ")))
+                            'face
+                            (if (member status org-done-keywords-for-agenda)
+                                'org-done
+                              (if status
+                                  'org-todo
+                                'org-agenda-structure))))
               (propertize (format "%-40.40s" (org-focus-limit-string 40 title))
                           'face face)
+              (if holdover
+                  (propertize " [holdover]" 'face 'org-agenda-structure)
+                "")
               "\n")
       (when current
         (let ((o (make-overlay start (point))))
@@ -493,6 +520,11 @@ from it to get TARGET-DAY of week."
 (defun org-focus-day= (x y)
   "Are two dates equal by the day?"
   (string= (format-time-string "%Y%m%d" x)
+           (format-time-string "%Y%m%d" y)))
+
+(defun org-focus-day< (x y)
+  "x < y on date"
+  (string< (format-time-string "%Y%m%d" x)
            (format-time-string "%Y%m%d" y)))
 
 (provide 'org-focus)
