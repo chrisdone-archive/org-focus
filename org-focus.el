@@ -170,7 +170,8 @@
       (let ((items (org-focus-all-items))
             (base-time (or base-time (current-time)))
             (base-day (string-to-number (format-time-string "%u" base-time)))
-            (unfinished-items (list)))
+            (unfinished-items (list))
+            (line (line-number-at-pos)))
         (erase-buffer)
         (remove-overlays)
         (insert
@@ -182,7 +183,9 @@
                                           i
                                           (org-focus-add-day base-time i)
                                           items
-                                          unfinished-items))))))
+                                          unfinished-items))
+        (goto-char (point-min))
+        (forward-line (1- line))))))
 
 (defun org-focus-render-day (base-day i this-time items unfinished-items)
   "Render a day of the week planner."
@@ -301,8 +304,12 @@
   (let* ((title (plist-get item :title))
          (status (plist-get item :status))
          (category (plist-get item :category))
+         (unscheduled (= 0 planned-hours))
+         (is-done (member status org-done-keywords-for-agenda))
          (face (cond
-                ((member status org-done-keywords-for-agenda)
+                (is-done
+                 'org-agenda-done)
+                (unscheduled
                  'org-agenda-done)
                 ((= base-day i)
                  'org-scheduled-today)
@@ -322,25 +329,24 @@
                           'org-focus-item item)
               planned
               "  "
-              (if (< i base-day)
-                  (format "%-10.10s"
-                          (if (> planned-hours 0)
-                              (propertize "SCHEDULED" 'face 'org-done)
-                            (propertize "UNPLANNED" 'face 'org-agenda-structure)))
-                (propertize (format "%-10.10s"
-                                    (if (< i base-day)
-                                        (if (member status org-done-keywords-for-agenda)
-                                            "DONE"
-                                          "WORKED ON")
-                                      (if status
-                                          (concat status " ")
-                                        "GENERAL ")))
-                            'face
-                            (if (member status org-done-keywords-for-agenda)
-                                'org-done
-                              (if status
-                                  'org-todo
-                                'org-agenda-structure))))
+              (format "%-10.10s"
+                      (if (or (> planned-hours 0)
+                              is-done)
+                          (propertize (format "%-10.10s"
+                                              (if (< i base-day)
+                                                  (if is-done
+                                                      "DONE"
+                                                    "WORKED ON")
+                                                (if status
+                                                    (concat status " ")
+                                                  "GENERAL ")))
+                                      'face
+                                      (if is-done
+                                          'org-done
+                                        (if status
+                                            'org-todo
+                                          'org-agenda-structure)))
+                        (propertize "UNPLANNED" 'face 'org-agenda-structure)))
               (propertize (format "%-40.40s" (org-focus-limit-string 40 title))
                           'face face)
               (if holdover
