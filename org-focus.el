@@ -282,13 +282,14 @@
   (unless (and (= done 0) (= planned 0))
     (let ((remaining (if (and (= base-day i))
                          (format (if (> todos 0)
-                                     "(%.2f planned, %.2f unplanned, %.2f left)"
+                                     "(%.2f planned, %.2f unplanned, %.2f remaining today)"
                                    "")
                                  planned
                                  unplanned
-                                 (if (> planned done)
-                                     (- (+ planned unplanned) done)
-                                   0))
+                                 ;; (if (> planned done)
+                                 ;;     (- (+ planned unplanned) done)
+                                 ;;   0)
+                                 (max 0 (- 8.0 done)))
                        (if (> unplanned 0)
                            (format "(%.2f unplanned)" unplanned)
                          ""))))
@@ -457,16 +458,19 @@
        while (search-forward-regexp
               org-scheduled-time-regexp
               boundary t 1)
-       collect (let ((date (save-excursion
-                             (apply 'encode-time
-                                    (org-parse-time-string
-                                     (substring-no-properties (match-string 1))))))
+       collect (let ((date (org-focus-parse-time
+                            (substring-no-properties (match-string 1))))
                      (hours (when (search-forward-regexp
                                    (concat " " org-focus-estimate-regex)
                                    boundary t 1)
                               (string-to-number (match-string 1)))))
                  (list :date date
                        :hours hours))))))
+
+(defun org-focus-parse-time (string)
+  "Parse the time STRING."
+  (save-excursion
+    (apply 'encode-time (org-parse-time-string string))))
 
 (defun org-focus-item-clocks (boundary)
   "Get all clocks for the task."
@@ -482,9 +486,8 @@
                             (if string
                                 (org-focus-parse-hours string)
                               (org-focus-current-clock)))))
-               (list :date (apply 'encode-time
-                                  (org-parse-time-string
-                                   (format "%0.4d-%0.2d-%0.2d" year month day)))
+               (list :date (org-focus-parse-time
+                            (format "%0.4d-%0.2d-%0.2d" year month day))
                      :hours hours
                      :current current)))))
 
