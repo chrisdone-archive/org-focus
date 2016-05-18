@@ -494,7 +494,8 @@
 (defun org-focus-current-clock ()
   "Get the clocked time for the current item, does not include
   previous clocking intervals."
-  (if org-clock-start-time
+  (if (and org-clock-start-time
+           (not (string= org-clock-start-time)))
       (/ (/
           (- (org-float-time)
              (org-float-time org-clock-start-time))
