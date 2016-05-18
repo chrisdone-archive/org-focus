@@ -495,14 +495,13 @@
   "Get the clocked time for the current item, does not include
   previous clocking intervals."
   (if (and org-clock-start-time
-           (not (string= org-clock-start-time)))
+           (not (string= "" org-clock-start-time)))
       (/ (/
           (- (org-float-time)
              (org-float-time org-clock-start-time))
           60)
          60)
-    (progn (warn "Clock time is lost.")
-           0)))
+    0))
 
 (defun org-focus-date->week (base-time)
   "Given a BASE-TIME, return the day of the week."
