@@ -495,7 +495,8 @@
   "Get the clocked time for the current item, does not include
   previous clocking intervals."
   (if (and org-clock-start-time
-           (not (string= "" org-clock-start-time)))
+           (when (stringp org-clock-start-time)
+             (not (string= "" org-clock-start-time))))
       (/ (/
           (- (org-float-time)
              (org-float-time org-clock-start-time))
