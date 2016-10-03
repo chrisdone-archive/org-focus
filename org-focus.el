@@ -293,9 +293,15 @@
                        (if (> unplanned 0)
                            (format "(%.2f unplanned)" unplanned)
                          ""))))
-      (insert (propertize (format "  %-10.10s  %5.2f / %5.2f %s\n"
-                                  "Total"
-                                  done
+      (insert (propertize (format "  %-10.10s  "
+                                  "Total")
+                          'face 'org-agenda-structure))
+      (insert (propertize (format "%5.2f"
+                                  done)
+                          'face (if (< done 8)
+                                    'font-lock-error
+                                    'org-agenda-structure)))
+      (insert (propertize (format " / %5.2f %s\n"
                                   (+ planned unplanned)
                                   remaining)
                           'face 'org-agenda-structure)))))
