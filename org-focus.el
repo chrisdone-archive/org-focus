@@ -83,6 +83,30 @@
 (define-key org-focus-mode-map (kbd "C-c C-s") 'org-focus-jump-and-schedule)
 (define-key org-focus-mode-map (kbd "C-x C-s") 'org-save-all-org-buffers)
 (define-key org-focus-mode-map (kbd "C-c C-x C-o") 'org-focus-clock-out)
+(define-key org-focus-mode-map (kbd "r") 'org-focus-retroactive)
+
+(defun org-focus-retroactive ()
+  "Retroactively add entries that you forgot to clock."
+  (interactive)
+  (let* ((this-time (get-text-property (point) 'time))
+         (file (ido-completing-read "Pick file: "(org-agenda-files nil)))
+         (items (with-current-buffer (find-file-noselect file t nil nil)
+                  (org-focus-buffer-items)))
+         (item-title (ido-completing-read "Item: "
+                                          (mapcar (lambda (item) (plist-get item :title))
+                                                  items)))
+         (item (car (remove-if-not (lambda (item) (string= item-title (plist-get item :title)))
+                                   items)))
+         (amount (string-to-number (read-from-minibuffer "Hours clocked: " "1"))))
+    (with-current-buffer (find-file-noselect file t nil nil)
+      (goto-char (plist-get item :point))
+      (forward-line 1)
+      (insert (format "  CLOCK: [%s]--[%s] => %2d:00\n"
+                      (format-time-string "%Y-%m-%d %a %H:%M" this-time)
+                      (format-time-string "%Y-%m-%d %a %H:%M" this-time)
+                      amount))
+      (save-buffer))
+    (org-focus-current)))
 
 (defun org-focus-goto ()
   "Go to the item."
@@ -196,9 +220,11 @@
                     (format-time-string " W%W" this-time)
                   "")
                 "\n")))
-    (insert (propertize title 'face (if (= i base-day)
-                                        'org-agenda-date-today
-                                      'org-agenda-date)))
+    (insert (propertize title
+                        'face (if (= i base-day)
+                                  'org-agenda-date-today
+                                'org-agenda-date)
+                        'time this-time))
     (let ((total-planned 0)
           (total-done 0)
           (todo-count 0)
@@ -300,7 +326,7 @@
                                   done)
                           'face (if (< done 8)
                                     'font-lock-error
-                                    'org-agenda-structure)))
+                                  'org-agenda-structure)))
       (insert (propertize (format " / %5.2f %s\n"
                                   (+ planned unplanned)
                                   remaining)
