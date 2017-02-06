@@ -57,11 +57,11 @@
   "Regex matching the estimate.")
 
 (defconst org-focus-clock-regex
-  "^[ ]+CLOCK: \\[\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\).+ =>  \\([0-9]+:[0-9]+\\)$"
+  "^[ ]+CLOCK: \\[\\([0-9]+-[0-9]+-[0-9]+ [A-Za-z]+ [0-9]+:[0-9]+\\).+ =>  \\([0-9]+:[0-9]+\\)$"
   "Regex matching the CLOCK tracking.")
 
 (defconst org-focus-clock-current-regex
-  "^[ ]+CLOCK: \\[\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\).+\\]$"
+  "^[ ]+CLOCK: \\[\\([0-9]+-[0-9]+-[0-9]+ [A-Za-z]+ [0-9]+:[0-9]+\\)\\]$"
   "Regex matching a current CLOCK in.")
 
 (defvar org-focus-mode-current-time
@@ -195,7 +195,8 @@
             (base-time (or base-time (current-time)))
             (base-day (string-to-number (format-time-string "%u" base-time)))
             (unfinished-items (list))
-            (line (line-number-at-pos)))
+            (line (line-number-at-pos))
+            (total-week 0))
         (erase-buffer)
         (remove-overlays)
         (insert
@@ -203,13 +204,29 @@
           (format-time-string "Clock-week-agenda (W%W):\n" base-time)
           'face 'org-agenda-structure))
         (cl-loop for i from 1 to 7
-                 do (org-focus-render-day base-day
-                                          i
-                                          (org-focus-add-day base-time i)
-                                          items
-                                          unfinished-items))
+                 do (setq total-week
+                          (+ total-week
+                             (org-focus-render-day base-day
+                                                   i
+                                                   (org-focus-add-day base-time i)
+                                                   items
+                                                   unfinished-items))))
+        (save-excursion
+          (goto-char (point-min))
+          (forward-line 1)
+          (insert (propertize "Total "
+                              'face 'org-agenda-structure))
+          (insert (propertize (format "%5.2f"
+                                      total-week)
+                              'face (if (< total-week org-focus-per-week)
+                                        'font-lock-error
+                                      'org-agenda-structure)))
+          (insert "\n"))
         (goto-char (point-min))
         (forward-line (1- line))))))
+
+(defvar org-focus-per-week 40
+  "Ideal hours per week.")
 
 (defun org-focus-render-day (base-day i this-time items unfinished-items)
   "Render a day of the week planner."
@@ -301,7 +318,8 @@
                          holdover)))))
       (org-focus-render-day-totals base-day i
                                    total-done total-planned total-unplanned
-                                   todo-count))))
+                                   todo-count)
+      total-done)))
 
 (defun org-focus-render-day-totals (base-day i done planned unplanned todos)
   "Render the totals for a day."
@@ -510,17 +528,20 @@
     (cl-loop
      while (or (search-forward-regexp org-focus-clock-current-regex boundary t 1)
                (search-forward-regexp org-focus-clock-regex boundary t 1))
-     collect (let ((year (string-to-number (match-string 1)))
-                   (month (string-to-number (match-string 2)))
-                   (day (string-to-number (match-string 3)))
-                   (current (not (match-string 4)))
-                   (hours (let ((string (match-string 4)))
+     collect (let (;; (year (string-to-number (match-string 1)))
+                   ;; (month (string-to-number (match-string 2)))
+                   ;; (day (string-to-number (match-string 3)))
+                   (date-time (match-string 1))
+                   (current (not (match-string 2)))
+                   (hours-stamp (match-string 2))
+                   (hours (let ((string (match-string 2)))
                             (if string
                                 (org-focus-parse-hours string)
                               (org-focus-current-clock)))))
                (list :date (org-focus-parse-time
-                            (format "%0.4d-%0.2d-%0.2d" year month day))
+                            date-time)
                      :hours hours
+                     :hours-stamp hours-stamp
                      :current current)))))
 
 (defun org-focus-current-clock ()
