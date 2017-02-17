@@ -383,7 +383,8 @@
                       (if (or (> planned-hours 0)
                               is-done)
                           (propertize (format "%-10.10s"
-                                              (if (< i base-day)
+                                              (if (and (< i base-day)
+                                                       (time-less-p this-time (current-time)))
                                                   (if is-done
                                                       "DONE"
                                                     "WORKED ON")
