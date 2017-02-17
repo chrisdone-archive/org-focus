@@ -216,8 +216,7 @@
           (forward-line 1)
           (insert (propertize "Total "
                               'face 'org-agenda-structure))
-          (insert (propertize (format "%5.2f"
-                                      total-week)
+          (insert (propertize (org-focus-format-hours total-week)
                               'face (if (< total-week org-focus-per-week)
                                         'font-lock-error
                                       'org-agenda-structure)))
@@ -326,27 +325,27 @@
   (unless (and (= done 0) (= planned 0))
     (let ((remaining (if (and (= base-day i))
                          (format (if (> todos 0)
-                                     "(%.2f planned, %.2f unplanned, %.2f remaining today)"
+                                     "(%s planned, %s unplanned, %s remaining today)"
                                    "")
-                                 planned
-                                 unplanned
+                                 (org-focus-format-hours planned)
+                                 (org-focus-format-hours unplanned)
                                  ;; (if (> planned done)
                                  ;;     (- (+ planned unplanned) done)
                                  ;;   0)
-                                 (max 0 (- (/ org-focus-per-week 5) done)))
+                                 (org-focus-format-hours (max 0 (- (/ org-focus-per-week 5) done))))
                        (if (> unplanned 0)
-                           (format "(%.2f unplanned)" unplanned)
+                           (format "(%s unplanned)" (org-focus-format-hours unplanned))
                          ""))))
       (insert (propertize (format "  %-10.10s  "
                                   "Total")
                           'face 'org-agenda-structure))
-      (insert (propertize (format "%5.2f"
-                                  done)
+      (insert (propertize (format "%s"
+                                  (org-focus-format-hours done))
                           'face (if (< done (/ org-focus-per-week 5))
                                     'font-lock-error
                                   'org-agenda-structure)))
-      (insert (propertize (format " / %5.2f %s\n"
-                                  (+ planned unplanned)
+      (insert (propertize (format " / %s %s\n"
+                                  (org-focus-format-hours (+ planned unplanned))
                                   remaining)
                           'face 'org-agenda-structure)))))
 
@@ -366,16 +365,16 @@
                  'org-scheduled-today)
                 (t 'org-scheduled)))
          (planned (if ( = 0 planned-hours)
-                      (propertize (format "%5.2f" hours)
+                      (propertize (org-focus-format-hours  hours)
                                   'face 'org-agenda-structure)
                     (if planned-hours
-                        (propertize (format "%5.2f" planned-hours) 'face face)
-                      (propertize (format "%5.2f" hours)
+                        (propertize (org-focus-format-hours  planned-hours) 'face face)
+                      (propertize (org-focus-format-hours hours)
                                   'face 'org-agenda-structure)))))
     (let ((start (point)))
-      (insert (propertize (format "  %-10.10s  %5.2f / "
+      (insert (propertize (format "  %-10.10s  %s / "
                                   category
-                                  hours)
+                                  (org-focus-format-hours hours))
                           'face face
                           'org-focus-item item)
               planned
@@ -580,6 +579,10 @@ from it to get TARGET-DAY of week."
        (format "%0.2f"
                (+ (string-to-number hours)
                   (/ (+ 0.0 (string-to-number minutes)) 60)))))))
+
+(defun org-focus-format-hours (hours)
+  "Print a decimal number of hours into base 60 e.g. 2.5 hours is 2:30."
+  (format "%d:%02d" (floor hours) (* 60 (- hours (floor hours)))))
 
 (defun org-focus-day= (x y)
   "Are two dates equal by the day?"
