@@ -333,7 +333,7 @@
                                  ;; (if (> planned done)
                                  ;;     (- (+ planned unplanned) done)
                                  ;;   0)
-                                 (max 0 (- 8.0 done)))
+                                 (max 0 (- (/ org-focus-per-week 5) done)))
                        (if (> unplanned 0)
                            (format "(%.2f unplanned)" unplanned)
                          ""))))
@@ -342,7 +342,7 @@
                           'face 'org-agenda-structure))
       (insert (propertize (format "%5.2f"
                                   done)
-                          'face (if (< done 8)
+                          'face (if (< done (/ org-focus-per-week 5))
                                     'font-lock-error
                                   'org-agenda-structure)))
       (insert (propertize (format " / %5.2f %s\n"
