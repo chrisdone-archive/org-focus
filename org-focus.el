@@ -93,7 +93,10 @@
     (org-focus-goto)
     (save-excursion
       (org-back-to-heading t)
-      (org-schedule t "+1d")))
+      (end-of-line)
+      (let ((date
+             (plist-get (car (plist-get (org-focus-current-item) :schedule)) :date)))
+        (org-schedule t (time-add date (seconds-to-time (* 60 60 24)))))))
   (org-focus-current))
 
 (defun org-focus-retroactive ()
@@ -480,36 +483,30 @@
     (goto-char (point-min))
     (cl-loop
      while (search-forward-regexp org-todo-line-regexp nil t 1)
-     collect (let* ((item-point (line-beginning-position))
-                    (item-buffer (current-buffer))
-                    (status (match-string 2))
-                    (title (match-string 3))
-                    (boundary (save-excursion
-                                (if (search-forward-regexp org-todo-line-regexp nil t 1)
-                                    (max 0 (1- (line-beginning-position)))
-                                  (point-max))))
-                    (category (when title
-                                (file-name-nondirectory (buffer-file-name))))
-                    (scheduled-dates (org-focus-item-schedule boundary))
-                    (estimate (org-focus-item-estimate boundary))
-                    (clocks (org-focus-item-clocks boundary)))
-               (list :status (when status
-                               (substring-no-properties status))
-                     :title (when title
-                              (substring-no-properties title))
-                     :category category
-                     :schedule scheduled-dates
-                     :estimate estimate
-                     :clocks clocks
-                     :point item-point
-                     :buffer item-buffer)))))
+     collect (org-focus-current-item))))
 
-(defun org-focus-item-estimate (boundary)
-  "Get the item estimate."
-  (save-excursion
-    (when (search-forward-regexp (concat "\\<ESTIMATE: " org-focus-estimate-regex)
-                                 boundary t 1)
-      (string-to-number (match-string 1)))))
+(defun org-focus-current-item ()
+  (let* ((item-point (line-beginning-position))
+         (item-buffer (current-buffer))
+         (status (match-string 2))
+         (title (match-string 3))
+         (boundary (save-excursion
+                     (if (search-forward-regexp org-todo-line-regexp nil t 1)
+                         (max 0 (1- (line-beginning-position)))
+                       (point-max))))
+         (category (when title
+                     (file-name-nondirectory (buffer-file-name))))
+         (scheduled-dates (org-focus-item-schedule boundary))
+         (clocks (org-focus-item-clocks boundary)))
+    (list :status (when status
+                    (substring-no-properties status))
+          :title (when title
+                   (substring-no-properties title))
+          :category category
+          :schedule scheduled-dates
+          :clocks clocks
+          :point item-point
+          :buffer item-buffer)))
 
 (defun org-focus-item-schedule (boundary)
   "Get all scheduled dates and planned hours for an item."
