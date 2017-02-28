@@ -77,6 +77,7 @@
 (define-key org-focus-mode-map (kbd "q") 'bury-buffer)
 (define-key org-focus-mode-map (kbd "f") 'org-focus-forward)
 (define-key org-focus-mode-map (kbd "b") 'org-focus-backward)
+(define-key org-focus-mode-map (kbd "B") 'org-focus-bump)
 (define-key org-focus-mode-map (kbd "g") 'org-focus-current)
 (define-key org-focus-mode-map (kbd "RET") 'org-focus-goto)
 (define-key org-focus-mode-map (kbd "C-c C-x C-i") 'org-focus-clock-in)
@@ -84,6 +85,16 @@
 (define-key org-focus-mode-map (kbd "C-x C-s") 'org-save-all-org-buffers)
 (define-key org-focus-mode-map (kbd "C-c C-x C-o") 'org-focus-clock-out)
 (define-key org-focus-mode-map (kbd "r") 'org-focus-retroactive)
+
+(defun org-focus-bump ()
+  "Bump current item to the next day."
+  (interactive)
+  (save-window-excursion
+    (org-focus-goto)
+    (save-excursion
+      (org-back-to-heading t)
+      (org-schedule t "+1d")))
+  (org-focus-current))
 
 (defun org-focus-retroactive ()
   "Retroactively add entries that you forgot to clock."
