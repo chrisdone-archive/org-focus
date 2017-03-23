@@ -234,6 +234,12 @@
                               'face (if (< total-week org-focus-per-week)
                                         'font-lock-error
                                       'org-agenda-structure)))
+          (insert (propertize ", remaining "
+                              'face 'org-agenda-structure))
+          (insert (propertize (org-focus-format-hours (- org-focus-per-week total-week))
+                              'face (if (< total-week org-focus-per-week)
+                                        'font-lock-error
+                                      'org-agenda-structure)))
           (insert "\n"))
         (goto-char (point-min))
         (forward-line (1- line))))))
