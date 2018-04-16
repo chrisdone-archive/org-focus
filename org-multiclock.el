@@ -78,7 +78,4 @@
                (+ (string-to-number hours)
                   (/ (+ 0.0 (string-to-number minutes)) 60)))))))
 
-(define-key org-mode-map (kbd "C-c C-x C-i") 'org-multiclock-in)
-(define-key org-mode-map (kbd "C-c C-x C-o") 'org-multiclock-out)
-
 (provide 'org-multiclock)
