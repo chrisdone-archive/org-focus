@@ -476,7 +476,7 @@
   "Collect all clocked items from all org buffers (via
 `org-focus-buffer-items') in a flat list."
   (let ((all-items nil))
-    (cl-loop for file in (org-agenda-files nil t)
+    (cl-loop for file in (cl-remove-duplicates (mapcar (lambda (o) (expand-file-name o "/")) (org-agenda-files nil t)) :test 'string=)
              do (with-current-buffer (find-file-noselect file t nil nil)
                   (setq all-items
                         (append all-items
