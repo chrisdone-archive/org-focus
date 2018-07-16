@@ -356,7 +356,7 @@
                        (if (> unplanned 0)
                            (format "(%s unplanned)" (org-focus-format-hours unplanned))
                          ""))))
-      (insert (propertize (format "  %-10.10s  "
+      (insert (propertize (format "  %-30.10s  "
                                   "Total")
                           'face 'org-agenda-structure))
       (insert (propertize (format "%s"
@@ -364,10 +364,12 @@
                           'face (if (< done (/ org-focus-per-week 5))
                                     'font-lock-error
                                   'org-agenda-structure)))
-      (insert (propertize (format " / %s %s\n"
-                                  (org-focus-format-hours (+ planned unplanned))
-                                  remaining)
-                          'face 'org-agenda-structure)))))
+      (insert "\n")
+      ;; (insert (propertize (format " / %s %s\n"
+      ;;                             (org-focus-format-hours (+ planned unplanned))
+      ;;                             remaining)
+      ;;                     'face 'org-agenda-structure))
+      )))
 
 (defun org-focus-render-item (base-day i this-time item planned-hours hours current holdover)
   "Render an item for a day of the week."
@@ -392,12 +394,12 @@
                       (propertize (org-focus-format-hours hours)
                                   'face 'org-agenda-structure)))))
     (let ((start (point)))
-      (insert (propertize (format "  %-10.10s  %s / "
+      (insert (propertize (format "  %-30.30s  %s"
                                   category
                                   (org-focus-format-hours hours))
                           'face face
                           'org-focus-item item)
-              planned
+
               "  "
               (format "%-10.10s"
                       (if (or (> planned-hours 0)
