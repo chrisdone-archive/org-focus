@@ -398,7 +398,8 @@
                                   category
                                   (org-focus-format-hours hours))
                           'face face
-                          'org-focus-item item)
+                          'org-focus-item item
+                          'time this-time)
 
               "  "
               (format "%-10.10s"
@@ -409,7 +410,7 @@
                                                        (time-less-p this-time (current-time)))
                                                   (if is-done
                                                       "DONE"
-                                                    "WORKED ON")
+                                                    "WORKEDON")
                                                 (if status
                                                     (concat status " ")
                                                   "GENERAL ")))
