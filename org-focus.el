@@ -345,30 +345,31 @@
   (unless (and (= done 0) (= planned 0))
     (let ((remaining (if (and (= base-day i))
                          (format (if (> todos 0)
-                                     "(%s planned, %s unplanned, %s remaining today)"
+                                     "(%s planned, %s unplanned)"
                                    "")
                                  (org-focus-format-hours planned)
                                  (org-focus-format-hours unplanned)
                                  ;; (if (> planned done)
                                  ;;     (- (+ planned unplanned) done)
                                  ;;   0)
-                                 (org-focus-format-hours (max 0 (- (/ org-focus-per-week 5) done))))
+                                 ;; (org-focus-format-hours (max 0 (- (/ org-focus-per-week 5) done)))
+                                 )
                        (if (> unplanned 0)
                            (format "(%s unplanned)" (org-focus-format-hours unplanned))
                          ""))))
       (insert (propertize (format "  %-30.10s  "
                                   "Total")
                           'face 'org-agenda-structure))
-      (insert (propertize (format "%s"
-                                  (org-focus-format-hours done))
-                          'face (if (< done (/ org-focus-per-week 5))
-                                    'font-lock-error
-                                  'org-agenda-structure)))
-      (insert "\n")
-      ;; (insert (propertize (format " / %s %s\n"
-      ;;                             (org-focus-format-hours (+ planned unplanned))
-      ;;                             remaining)
-      ;;                     'face 'org-agenda-structure))
+      ;; (insert (propertize (format "%s"
+      ;;                             (org-focus-format-hours done))
+      ;;                     'face (if (< done (/ org-focus-per-week 5))
+      ;;                               'font-lock-error
+      ;;                             'org-agenda-structure)))
+      (insert (propertize (format "%s / %s %s\n"
+                                  (org-focus-format-hours done)
+                                  (org-focus-format-hours (+ planned unplanned))
+                                  remaining)
+                          'face 'org-agenda-structure))
       )))
 
 (defun org-focus-render-item (base-day i this-time item planned-hours hours current holdover)
@@ -394,39 +395,44 @@
                       (propertize (org-focus-format-hours hours)
                                   'face 'org-agenda-structure)))))
     (let ((start (point)))
-      (insert (propertize (format "  %-30.30s  %s"
-                                  category
-                                  (org-focus-format-hours hours))
-                          'face face
-                          'org-focus-item item
-                          'time this-time)
+      (when (if (< i base-day)
+                (> hours 0)
+                t)
+        (insert (propertize (format "  %-30.30s  %s / %s"
+                                    category
+                                    (org-focus-format-hours hours)
+                                    (org-focus-format-hours planned-hours))
+                            'face face
+                            'org-focus-item item
+                            'time this-time)
 
-              "  "
-              (format "%-10.10s"
-                      (if (or (> planned-hours 0)
-                              is-done)
-                          (propertize (format "%-10.10s"
-                                              (if (and (< i base-day)
-                                                       (time-less-p this-time (current-time)))
-                                                  (if is-done
-                                                      "DONE"
-                                                    "WORKEDON")
-                                                (if status
-                                                    (concat status " ")
-                                                  "GENERAL ")))
-                                      'face
-                                      (if is-done
-                                          'org-done
-                                        (if status
-                                            'org-todo
-                                          'org-agenda-structure)))
-                        (propertize "UNPLANNED" 'face 'org-agenda-structure)))
-              (propertize (format "%-40.40s" (org-focus-limit-string 40 title))
-                          'face face)
-              (if holdover
-                  (propertize " [holdover]" 'face 'org-agenda-structure)
-                "")
-              "\n")
+                "  "
+                (format "%-10.10s"
+                        (if (or (> planned-hours 0)
+                                is-done
+                                (not (time-less-p this-time (current-time))))
+                            (propertize (format "%-10.10s"
+                                                (if (and (< i base-day)
+                                                         (time-less-p this-time (current-time)))
+                                                    (if is-done
+                                                        "DONE"
+                                                      "WORKEDON")
+                                                  (if status
+                                                      (concat status " ")
+                                                    "GENERAL ")))
+                                        'face
+                                        (if is-done
+                                            'org-done
+                                          (if status
+                                              'org-todo
+                                            'org-agenda-structure)))
+                          (propertize "UNPLANNED" 'face 'org-agenda-structure)))
+                (propertize (format "%-40.40s" (org-focus-limit-string 40 title))
+                            'face face)
+                (if holdover
+                    (propertize " [holdover]" 'face 'org-agenda-structure)
+                  "")
+                "\n"))
       (when current
         (let ((o (make-overlay start (point))))
           (overlay-put o 'face 'org-agenda-clocking))))))
