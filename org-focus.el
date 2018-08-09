@@ -265,7 +265,9 @@
           (total-done 0)
           (todo-count 0)
           (total-unplanned 0))
-      (cl-loop for item in items
+      (cl-loop for item in (sort items (lambda (x y)
+                                         (string< (plist-get x :status)
+                                                  (plist-get y :status))))
                do (let* ((status (plist-get item :status))
                          (clocks (plist-get item :clocks))
                          (this-is-current nil)
@@ -430,7 +432,7 @@
                 (propertize (format "%-40.40s" (org-focus-limit-string 40 title))
                             'face face)
                 (if holdover
-                    (propertize " [holdover]" 'face 'org-agenda-structure)
+                    (propertize " [holdover]" 'face 'org-todo)
                   "")
                 "\n"))
       (when current
