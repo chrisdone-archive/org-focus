@@ -207,7 +207,11 @@
     (let ((inhibit-read-only t))
       (let* ((items (org-focus-all-items))
              (base-time (or base-time (org-focus-mode-current-time)))
-             (base-day (string-to-number (format-time-string "%u" base-time)))
+             (base-day (if (not (org-focus-week=
+                             (current-time)
+                             base-time))
+                           0
+                         (string-to-number (format-time-string "%u" base-time))))
              (unfinished-items (list))
              (line (line-number-at-pos))
              (total-week 0))
@@ -620,5 +624,10 @@ from it to get TARGET-DAY of week."
   "x < y on date"
   (string< (format-time-string "%Y%m%d" x)
            (format-time-string "%Y%m%d" y)))
+
+(defun org-focus-week= (x y)
+  "x = y on week"
+  (string= (format-time-string "%U" x)
+           (format-time-string "%U" y)))
 
 (provide 'org-focus)
